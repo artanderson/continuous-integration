@@ -1,0 +1,9 @@
+name: 'CI Bot'
+description: 'Combine PRs into staging branch 1 by 1'
+inputs:
+  gh_token:
+    description: 'Github token'
+    required: true     
+runs:
+  using: 'node16'
+  main: 'src/index.js'

@@ -42,7 +42,7 @@ const main = async () => {
 
         let pullRequests = [];
         for(let pull of pulls){
-            pullRequests.push({pull_number: pull.number, sha: pull.head.sha});       
+            pullRequests.push({pull_number: pull.number, sha: pull.merge_commit_sha});       
         }
 
         if(pullRequests.length === 0){
@@ -59,7 +59,7 @@ const main = async () => {
 
         pulls:
         for(let pull of pullRequests){
-            let { data: status } = await octokit.rest.repos.listCommitStatusesForRef({
+            let { data: status } = await octokit.rest.repos.getCommit({
                 owner,
                 repo,
                 ref: pull.sha

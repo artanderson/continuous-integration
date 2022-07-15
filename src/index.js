@@ -55,15 +55,14 @@ const main = async () => {
             repo,
             branch: 'main'
         });
-        console.log(br.protection.required_status_checks.contexts);
-        console.log(br.protection.required_status_checks.checks);
+        console.log(br);
 
         pulls:
         for(let pull of pullRequests){
-            let { data: status } = await octokit.rest.pulls.get({
+            let { data: status } = await octokit.rest.repos.listCommitStatusesForRef({
                 owner,
                 repo,
-                pull_number: pull.pull_number
+                ref: pull.sha
             });
             console.log(status);
             

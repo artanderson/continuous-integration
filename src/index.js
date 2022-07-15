@@ -50,6 +50,13 @@ const main = async () => {
             return 0;
         }
 
+        let { data: br } = await octokit.rest.repos.getBranch({
+            owner,
+            repo,
+            branch: 'main'
+        });
+        console.log(br);
+
         pulls:
         for(let pull of pullRequests){
             let { data: status } = await octokit.rest.pulls.get({

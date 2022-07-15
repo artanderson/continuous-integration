@@ -52,10 +52,10 @@ const main = async () => {
 
         pulls:
         for(let pull of pullRequests){
-            let { data: status } = await octokit.rest.repos.getCombinedStatusForRef({
+            let { data: status } = await octokit.rest.pulls.get({
                 owner,
                 repo,
-                ref: pull.sha
+                pull_number: pull.pull_number
             });
             console.log(status);
             

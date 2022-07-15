@@ -58,9 +58,9 @@ const main = async () => {
                 ref: pull.sha
             });
             console.log(status);
-            return 0;
             
-            if(pr.mergeable === null){
+
+            /*if(pr.mergeable === null){
                 await sleep(60);
                 let { data: prRecheck } = await octokit.rest.pulls.get({
                     owner,
@@ -152,7 +152,7 @@ const main = async () => {
             })
             .catch((error) => {
                 core.setFailed(error.message);
-            });
+            });*/
         }
         if(readyPrs === 0){
             console.log('No PRs ready to merge');

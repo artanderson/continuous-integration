@@ -16,7 +16,7 @@ const main = async () => {
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
         
-        excludedLabels = excludedLabels.toLowerCase().split('_');
+        let exLabels = excludedLabels.toLowerCase().split('_');
 
         await octokit.request('POST /repos/{owner}/{repo}/merges', {
             owner,
@@ -74,7 +74,7 @@ const main = async () => {
                 let labels = true;
                 label:
                 for(let label of pr.labels){
-                    if(excludedLabels.includes(label.name.toLowerCase())){
+                    if(exLabels.includes(label.name.toLowerCase())){
                         labels = false;
                         break label;
                     }

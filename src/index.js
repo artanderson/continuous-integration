@@ -32,15 +32,14 @@ const main = async () => {
             core.setFailed(error.message);
         });
 
-        let pulls = await octokit.rest.pulls.list({
+        let { data: pulls } = await octokit.rest.pulls.list({
             owner,
             repo,
             state: "open",
             base: "main",
             per_page: 100
         })
-        console.log(pulls);
-        
+
         let pullNums = [];
         for(let pull of pulls){
             pullNums.push(pull.number);       
@@ -53,7 +52,7 @@ const main = async () => {
 
         pulls:
         for(let pull_number of pullNums){
-            let pr = await octokit.rest.pulls.get({
+            let { data: pr } = await octokit.rest.pulls.get({
                 owner,
                 repo,
                 pull_number
@@ -61,11 +60,12 @@ const main = async () => {
             
             if(pr.mergeable === null){
                 await sleep(60);
-                pr = await octokit.rest.pulls.get({
+                let { data: prRecheck } = await octokit.rest.pulls.get({
                     owner,
                     repo,
                     pull_number
                 });
+                pr = prRecheck;
             }
             if(!pr.mergeable){
                 console.log('PR not ready to merge');
@@ -93,7 +93,7 @@ const main = async () => {
                 base: branch
             })
             .then(async () => {
-                let runs = await octokit.rest.checks.listForRef({
+                let { data: runs } = await octokit.rest.checks.listForRef({
                     owner,
                     repo,
                     ref: branch,
@@ -102,7 +102,7 @@ const main = async () => {
                 let check_run_id = runs.check_runs[0].id;
                 let complete = false
                 while(!complete){
-                    let checkRun = await octokit.rest.checks.get({
+                    let { data: checkRun } = await octokit.rest.checks.get({
                         owner,
                         repo,
                         check_run_id
@@ -119,7 +119,7 @@ const main = async () => {
                                 base: "main"
                             })
                             .then(async () => {
-                                let reviews = await octokit.rest.pulls.listReviews({
+                                let { data: reviews } = await octokit.rest.pulls.listReviews({
                                     owner,
                                     repo,
                                     pull_number

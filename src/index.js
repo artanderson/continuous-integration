@@ -76,7 +76,7 @@ const main = async () => {
                     continue;
                 }
             }
-            
+
             await octokit.rest.pulls.update({
                 owner,
                 repo,
@@ -84,6 +84,7 @@ const main = async () => {
                 base: branch
             })
             .then(async () => {
+                console.log('Base branch changed to ' + branch);
                 let { data: runs } = await octokit.rest.checks.listForRef({
                     owner,
                     repo,
@@ -93,6 +94,7 @@ const main = async () => {
                 let check_run_id = runs.check_runs[0].id;
                 let complete = false
                 while(!complete){
+                    console.log("Waiting for check to complete");
                     let { data: checkRun } = await octokit.rest.checks.get({
                         owner,
                         repo,
@@ -103,6 +105,7 @@ const main = async () => {
                     }
                     else{
                         if(checkRun.conclusion !== 'success'){
+                            console.log("Check unsuccessful");
                             await octokit.rest.pulls.update({
                                 owner,
                                 repo,
@@ -110,6 +113,7 @@ const main = async () => {
                                 base: "main"
                             })
                             .then(async () => {
+                                console.log("Base branch updated to main");
                                 let { data: reviews } = await octokit.rest.pulls.listReviews({
                                     owner,
                                     repo,
@@ -124,6 +128,7 @@ const main = async () => {
                                         message: "Staging checks failed"
                                     })
                                 }
+                                console.log("All reviews dismissed");
                             })
                         }
                         else{
@@ -133,6 +138,7 @@ const main = async () => {
                                 pull_number
                             })
                             .then(() => {
+                                console.log("PR successfully merged into " + branch);
                                 readyPrs++;
                             })
                         }

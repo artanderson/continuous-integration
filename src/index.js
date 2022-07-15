@@ -55,7 +55,8 @@ const main = async () => {
             repo,
             branch: 'main'
         });
-        console.log(br);
+        console.log(br.protection.required_status_checks.contexts);
+        console.log(br.protection.required_status_checks.checks);
 
         pulls:
         for(let pull of pullRequests){

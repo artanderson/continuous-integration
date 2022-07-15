@@ -14,6 +14,11 @@ const main = async () => {
         const { owner, repo } = github.context.repo;
         const branch = "prod-staging";
 
+        excludedLabels = excludedLabels.split('_');
+        if(!excludedLabels){
+            excludedLabels = [0];
+        }
+
         let pulls = await oktokit.rest.pulls.list({
             owner,
             repo,

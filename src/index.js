@@ -39,7 +39,8 @@ const main = async () => {
             base: "main",
             per_page: 100
         })
-
+        console.log(pulls);
+        
         let pullNums = [];
         for(let pull of pulls){
             pullNums.push(pull.number);       

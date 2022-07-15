@@ -9,7 +9,7 @@ const main = async () => {
     try{
         const token = core.getInput('gh_token', {required: true});
         const branch = core.getInput('branch', {required: true});
-        const seconds = core.getInput('seconds', {required: true});
+        const seconds = core.getInput('interval', {required: true});
         const excludedLabels = core.getInput('labels', {required: false});
         let readyPrs = 0;
         

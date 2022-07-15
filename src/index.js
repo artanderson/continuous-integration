@@ -46,8 +46,8 @@ const main = async () => {
             pullNums.push(pull.number);       
         }
         console.log(pullNums.toString());
-        
-        if(pullNums.length > 0){
+
+        if(pullNums.length === 0){
             console.log('No PRs ready to merge');
             return 0;
         }

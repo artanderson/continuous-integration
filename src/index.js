@@ -28,7 +28,7 @@ const main = async () => {
         .then(() => {
             console.log('Staging synced with main');
         })
-        .catch(() => {
+        .catch((error) => {
             core.setFailed(error.message);
         });
 
@@ -147,7 +147,7 @@ const main = async () => {
                     }
                 }
             })
-            .catch(() => {
+            .catch((error) => {
                 core.setFailed(error.message);
             });
         }
@@ -168,7 +168,7 @@ const main = async () => {
             });
         }                
     }
-    catch{
+    catch(error){
         core.setFailed(error.message);
     }
 }

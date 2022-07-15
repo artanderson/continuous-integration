@@ -42,9 +42,11 @@ const main = async () => {
 
         let pullNums = [];
         for(let pull of pulls){
+            console.log(pull.number);
             pullNums.push(pull.number);       
         }
-
+        console.log(pullNums.toString());
+        
         if(pullNums.length > 0){
             console.log('No PRs ready to merge');
             return 0;

@@ -40,25 +40,25 @@ const main = async () => {
             per_page: 100
         })
 
-        let pullNums = [];
+        let pullRequests = [];
         for(let pull of pulls){
-            console.log(pull.number);
-            pullNums.push(pull.number);       
+            pullRequests.push({pull_number: pull.number, sha: pull.head.sha});       
         }
-        console.log(pullNums.toString());
 
-        if(pullNums.length === 0){
+        if(pullRequests.length === 0){
             console.log('No PRs ready to merge');
             return 0;
         }
 
         pulls:
-        for(let pull_number of pullNums){
-            let { data: pr } = await octokit.rest.pulls.get({
+        for(let pull of pullRequests){
+            let { data: status } = await octokit.rest.repos.getCombinedStatusForRef({
                 owner,
                 repo,
-                pull_number
+                ref: pull.sha
             });
+            console.log(status);
+            return 0;
             
             if(pr.mergeable === null){
                 await sleep(60);

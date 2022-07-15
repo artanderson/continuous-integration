@@ -4,6 +4,12 @@ inputs:
   gh_token:
     description: 'Github token'
     required: true     
+  interval:
+    description: 'Polling interval'
+    required: true
+  labels:
+    description: 'Labels to exclude [array, of, label, names]'
+    required: true      
 runs:
   using: 'node16'
   main: 'src/index.js'

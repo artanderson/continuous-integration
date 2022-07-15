@@ -91,7 +91,7 @@ const main = async () => {
                 pull_number,
                 base: branch
             })
-            .then(() => {
+            .then(async () => {
                 let runs = await octokit.rest.checks.listForRef({
                     owner,
                     repo,
@@ -117,7 +117,7 @@ const main = async () => {
                                 pull_number,
                                 base: "main"
                             })
-                            .then(() => {
+                            .then(async () => {
                                 let reviews = await octokit.rest.pulls.listReviews({
                                     owner,
                                     repo,

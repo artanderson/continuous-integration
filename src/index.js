@@ -40,38 +40,27 @@ const main = async () => {
             per_page: 100
         })
 
-        let pullRequests = [];
+        let pullNums = [];
         for(let pull of pulls){
-            pullRequests.push({pull_number: pull.number, sha: pull.merge_commit_sha});       
+            pullNums.push(pull.number);       
         }
 
-        if(pullRequests.length === 0){
+        if(pullNums.length === 0){
             console.log('No PRs ready to merge');
             return 0;
         }
 
         pulls:
-        for(let pull of pullRequests){
-            let { data: status } = await octokit.rest.pulls.get({
+        for(let pull_number of pullNums){
+            let { data: pr } = await octokit.rest.pulls.get({
                 owner,
                 repo,
-                pull_number: pull.pull_number
+                pull_number
             });
-            console.log(status);
             
-
-            /*if(pr.mergeable === null){
-                await sleep(60);
-                let { data: prRecheck } = await octokit.rest.pulls.get({
-                    owner,
-                    repo,
-                    pull_number
-                });
-                pr = prRecheck;
-            }
-            if(!pr.mergeable){
+            if(pr.mergeable_state !== 'clean'){
                 console.log('PR not ready to merge');
-                break;
+                continue;
             }
             else{
                 let labels = true;
@@ -84,7 +73,7 @@ const main = async () => {
                 }
                 if(!labels){
                     console.log('PR not ready to merge');
-                    break pulls;
+                    continue;
                 }
             }
             
@@ -152,7 +141,7 @@ const main = async () => {
             })
             .catch((error) => {
                 core.setFailed(error.message);
-            });*/
+            });
         }
         if(readyPrs === 0){
             console.log('No PRs ready to merge');

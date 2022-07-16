@@ -91,10 +91,8 @@ const main = async () => {
                     repo,
                     ref: response.data.head.ref
                 })
-                console.log(checks);
                 let check = checks.check_runs.filter((check) => check.status !== 'completed');
-                console.log(check);
-                let check_run_id = check.id;
+                let check_run_id = check[0].id;
                 let complete = false
                 while(!complete){
                     console.log("Waiting for check to complete");

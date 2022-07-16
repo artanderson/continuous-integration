@@ -83,13 +83,12 @@ const main = async () => {
                 pull_number,
                 base: branch
             })
-            .then(async () => {
+            .then(async (response) => {
+                console.log(response);
                 console.log('Base branch changed to ' + branch);
-                let { data: runs } = await octokit.rest.checks.listForRef({
+                let { data: runs } = await octokit.rest.actions.listWorkflowRuns({
                     owner,
                     repo,
-                    ref: branch,
-                    check_name: "checks"
                 })
                 console.log(runs);
                 let check_run_id = runs.check_runs.id;

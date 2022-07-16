@@ -141,6 +141,7 @@ const main = async () => {
                             .then(() => {
                                 console.log("PR successfully merged into " + branch);
                                 readyPrs++;
+                                complete = true;
                             })
                         }
                     }

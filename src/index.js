@@ -85,13 +85,12 @@ const main = async () => {
             })
             .then(async (response) => {
                 console.log('Base branch changed to ' + branch);
-                let { data: runs } = await octokit.rest.actions.listWorkflowRuns({
+                let { data: checks } = await octokit.rest.checks.listForRef({
                     owner,
                     repo,
-                    workflow_id: "deploy.yaml",
-                    branch: response.data.head.ref
+                    ref: response.data.head.ref
                 })
-                console.log(runs);
+                console.log(checks);
                 let check_run_id = 1;
                 let complete = false
                 while(!complete){

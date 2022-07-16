@@ -85,7 +85,7 @@ const main = async () => {
             })
             .then(async (response) => {
                 console.log('Base branch changed to ' + branch);
-                sleep(30);
+                await sleep(30);
                 let { data: checks } = await octokit.rest.checks.listForRef({
                     owner,
                     repo,

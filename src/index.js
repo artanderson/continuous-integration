@@ -85,13 +85,15 @@ const main = async () => {
             })
             .then(async (response) => {
                 console.log('Base branch changed to ' + branch);
+                sleep(30);
                 let { data: checks } = await octokit.rest.checks.listForRef({
                     owner,
                     repo,
                     ref: response.data.head.ref
                 })
                 console.log(checks);
-                let check_run_id = 1;
+                let check = checks.check_runs.filter((check) => check.status !== 'completed');
+                let check_run_id = check.id;
                 let complete = false
                 while(!complete){
                     console.log("Waiting for check to complete");

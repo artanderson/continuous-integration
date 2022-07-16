@@ -91,7 +91,8 @@ const main = async () => {
                     ref: branch,
                     check_name: "checks"
                 })
-                let check_run_id = runs.check_runs[0].id;
+                console.log(runs);
+                let check_run_id = runs.check_runs.id;
                 let complete = false
                 while(!complete){
                     console.log("Waiting for check to complete");

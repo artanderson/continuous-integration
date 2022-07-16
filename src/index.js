@@ -101,8 +101,9 @@ const main = async () => {
                         repo,
                         check_run_id
                     })
-                    if(checkRun.status !== 'complete'){
-                        await sleep(seconds);
+                    console.log(checkRun)
+                    if(checkRun[0].status !== 'complete'){
+                        await sleep(30);
                     }
                     else{
                         if(checkRun.conclusion !== 'success'){

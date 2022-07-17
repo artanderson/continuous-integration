@@ -69,7 +69,8 @@ const main = async () => {
             per_page: 100
         })
 
-        pulls = await Promise.all(pulls.map(async (pull) => {
+        let readyPulls = []
+        for(let pull of pulls){
             pullData = await octokit.rest.pulls.get({
                 repo,
                 owner,
@@ -88,19 +89,19 @@ const main = async () => {
             }
 
             if(pullData.mergeable_state === 'clean' && ready){
-                return pullData
+                readyPulls.push(pullData);
             }
-        }))
+        }
         
-        console.log(pulls);
+        console.log(readyPulls);
 
-        if(pulls.length === 0){
+        if(readyPulls.length === 0){
             console.log('No PRs ready to merge');
             return 0;
         }
 
         pulls:
-        for(let pull of pulls){
+        for(let pull of readyPulls){
             let pull_number = pull.pull_number;
 
             await octokit.rest.pulls.update({

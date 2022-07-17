@@ -68,6 +68,7 @@ const main = async () => {
             base: "main",
             per_page: 100
         })
+        console.log(pulls);
 
         pulls = pulls.filter(pull => {
             let ready = true;
@@ -81,6 +82,7 @@ const main = async () => {
 
             return pull.mergeable_state === 'clean' && ready;
         })
+        console.log(pulls);
 
         if(pulls.length === 0){
             console.log('No PRs ready to merge');

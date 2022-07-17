@@ -102,7 +102,7 @@ const main = async () => {
 
         pulls:
         for(let pull of readyPulls){
-            let pull_number = pull.pull_number;
+            let pull_number = pull.number;
 
             await octokit.rest.pulls.update({
                 owner,
@@ -162,7 +162,8 @@ const main = async () => {
             owner,
             repo,
             head: branch,
-            base: "main"
+            base: "main",
+            title: "Push to public site"
         })
         .then((response) => {
             if (response.status === 201 && response.data.mergeable){

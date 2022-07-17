@@ -5,13 +5,42 @@ const sleep = (seconds) => {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }
 
+const revert = async (octokit, owner, repo, pull_number) => {
+    await octokit.rest.pulls.update({
+        owner,
+        repo,
+        pull_number,
+        base: "main"
+    })
+    .then(async () => {
+        console.log('Base branch set back to main');
+        let { data: reviews } = await octokit.rest.pulls.listReviews({
+            owner,
+            repo,
+            pull_number
+        })
+        for(let review of reviews){
+            await octokit.rest.pulls.dismissReview({
+                owner,
+                repo,
+                pull_number,
+                review_id: review.id,
+                message: "Staging checks failed"
+            })
+        }
+        console.log("All reviews dismissed");
+    })
+    .catch((error) => {
+        console.log(error.message);
+    })
+}
+
 const main = async () => {
     try{
         const token = core.getInput('gh_token', {required: true});
         const branch = core.getInput('branch', {required: true});
         const seconds = core.getInput('interval', {required: true});
         const excludedLabels = core.getInput('labels', {required: false});
-        let readyPrs = 0;
         
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
@@ -40,42 +69,27 @@ const main = async () => {
             per_page: 100
         })
 
-        let pullNums = [];
-        for(let pull of pulls){
-            pullNums.push(pull.number);       
-        }
+        pulls = pulls.filter(pull => {
+            let ready = true;
+            labels:
+            for(let label of pull.labels){
+                if(exLabels.includes(label.name.toLowerCase())){
+                    ready = false;
+                    break labels;
+                }
+            }
 
-        if(pullNums.length === 0){
+            return pull.mergeable_state === 'clean' && ready;
+        })
+
+        if(pulls.length === 0){
             console.log('No PRs ready to merge');
             return 0;
         }
 
         pulls:
-        for(let pull_number of pullNums){
-            let { data: pr } = await octokit.rest.pulls.get({
-                owner,
-                repo,
-                pull_number
-            });
-            
-            if(pr.mergeable_state !== 'clean'){
-                console.log('PR not ready to merge');
-                continue;
-            }
-            else{
-                let labels = true;
-                label:
-                for(let label of pr.labels){
-                    if(exLabels.includes(label.name.toLowerCase())){
-                        labels = false;
-                        break label;
-                    }
-                }
-                if(!labels){
-                    console.log('PR not ready to merge');
-                    continue;
-                }
-            }
+        for(let pull of pulls){
+            let pull_number = pull.pull_number;
 
             await octokit.rest.pulls.update({
                 owner,
@@ -105,32 +119,10 @@ const main = async () => {
                         await sleep(30);
                     }
                     else{
+                        complete = true;
                         if(checkRun.conclusion !== 'success'){
                             console.log("Check unsuccessful");
-                            await octokit.rest.pulls.update({
-                                owner,
-                                repo,
-                                pull_number,
-                                base: "main"
-                            })
-                            .then(async () => {
-                                console.log("Base branch updated to main");
-                                let { data: reviews } = await octokit.rest.pulls.listReviews({
-                                    owner,
-                                    repo,
-                                    pull_number
-                                })
-                                for(let review of reviews){
-                                    await octokit.rest.pulls.dismissReview({
-                                        owner,
-                                        repo,
-                                        pull_number,
-                                        review_id: review.id,
-                                        message: "Staging checks failed"
-                                    })
-                                }
-                                console.log("All reviews dismissed");
-                            })
+                            revert(octokit, owner, repo, pull_number);
                         }
                         else{
                             await octokit.rest.pulls.merge({
@@ -140,33 +132,34 @@ const main = async () => {
                             })
                             .then(() => {
                                 console.log("PR successfully merged into " + branch);
-                                readyPrs++;
-                                complete = true;
+                            })
+                            .catch((error) => {
+                                console.log(error.message);
+                                revert(octokit, owner, repo, pull_number);
                             })
                         }
                     }
                 }
             })
             .catch((error) => {
-                core.setFailed(error.message);
+                console.log(error.message);
             });
         }
-        if(readyPrs === 0){
-            console.log('No PRs ready to merge');
-            return 0;
-        }
-        else{
-            await octokit.rest.pulls.create({
-                owner,
-                repo,
-                head: branch,
-                base: "main"
-            })
-            .then(() => {
+        await octokit.rest.pulls.create({
+            owner,
+            repo,
+            head: branch,
+            base: "main"
+        })
+        .then((response) => {
+            if (response.status === 201 && response.data.mergeable){
                 console.log('PR created on Main');
                 return 0;
-            });
-        }                
+            }
+            else{
+                console.log('Create pull request failed');
+            }
+        });                
     }
     catch(error){
         core.setFailed(error.message);

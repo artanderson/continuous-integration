@@ -70,7 +70,13 @@ const main = async () => {
         })
         console.log(pulls);
 
-        pulls = pulls.filter(pull => {
+        pulls = pulls.map(async (pull) => {
+            pullData = await octokit.rest.pulls.get({
+                repo,
+                owner,
+                pull_number: pull.number
+            })
+
             let ready = true;
             labels:
             for(let label of pull.labels){
@@ -80,8 +86,11 @@ const main = async () => {
                 }
             }
 
-            return pull.mergeable_state === 'clean' && ready;
+            if(pullData.mergeable_state === 'clean' && ready){
+                return pull;
+            }
         })
+
         console.log(pulls);
 
         if(pulls.length === 0){

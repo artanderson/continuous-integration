@@ -42,7 +42,8 @@ const main = async () => {
         const branch = core.getInput('branch', {required: true});
         const seconds = core.getInput('interval', {required: true});
         const exLabels = ['push to public', ...core.getInput('labels', {required: false}).toLowerCase().split('_')];
-        
+        let pushToPublic = true;
+
         console.log(exLabels);
 
         const octokit = github.getOctokit(token);
@@ -87,6 +88,10 @@ const main = async () => {
                         break labels;
                     }
                 }
+            }
+
+            if(pullData.head.ref === branch){
+                pushToPublic = false;
             }
 
             if(pullData.mergeable_state === 'clean' && ready){
@@ -162,30 +167,35 @@ const main = async () => {
                 console.log(error.message);
             });
         }
-        await octokit.rest.pulls.create({
-            owner,
-            repo,
-            head: branch,
-            base: "main",
-            title: "Push to public site"
-        })
-        .then((response) => {
-            if (response.status === 201){
-                await octokit.rest.issues.addLabels({
-                    owner,
-                    repo,
-                    issue_number: response.data.number,
-                    labels: ['push to public']
-                })
-                .then(() => {
-                    console.log('PR created on Main');
-                    return 0;
-                })
-            }
-            else{
-                console.log('Create pull request failed');
-            }
-        });                
+        if(pushToPublic){
+            await octokit.rest.pulls.create({
+                owner,
+                repo,
+                head: branch,
+                base: "main",
+                title: "Push to public site"
+            })
+            .then(async (response) => {
+                if (response.status === 201){
+                    await octokit.rest.issues.addLabels({
+                        owner,
+                        repo,
+                        issue_number: response.data.number,
+                        labels: ['push to public']
+                    })
+                    .then(() => {
+                        console.log('PR created on Main');
+                        return 0;
+                    })
+                }
+                else{
+                    console.log('Create pull request failed');
+                }
+            });
+        }
+        else{
+            console.log('Push to public pull request already exists')
+        }                
     }
     catch(error){
         core.setFailed(error.message);

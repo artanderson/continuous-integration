@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
+const { OK } = require('aerospike/lib/status');
 
 const sleep = (seconds) => {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000));
@@ -40,12 +41,12 @@ const main = async () => {
         const token = core.getInput('gh_token', {required: true});
         const branch = core.getInput('branch', {required: true});
         const seconds = core.getInput('interval', {required: true});
-        const excludedLabels = core.getInput('labels', {required: false});
+        const exLabels = ['push to public', ...core.getInput('labels', {required: false}).toLowerCase().split('_')];
         
+        console.log(exLabels);
+
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
-        
-        let exLabels = excludedLabels.toLowerCase().split('_');
 
         await octokit.request('POST /repos/{owner}/{repo}/merges', {
             owner,
@@ -92,8 +93,6 @@ const main = async () => {
                 readyPulls.push(pullData);
             }
         }
-        
-        console.log(readyPulls);
 
         if(readyPulls.length === 0){
             console.log('No PRs ready to merge');
@@ -103,7 +102,6 @@ const main = async () => {
         pulls:
         for(let pull of readyPulls){
             let pull_number = pull.number;
-
             await octokit.rest.pulls.update({
                 owner,
                 repo,
@@ -111,45 +109,51 @@ const main = async () => {
                 base: branch
             })
             .then(async (response) => {
-                console.log('Base branch changed to ' + branch);
-                await sleep(30);
-                let { data: checks } = await octokit.rest.checks.listForRef({
-                    owner,
-                    repo,
-                    ref: response.data.head.ref
-                })
-                let check = checks.check_runs.filter((check) => check.status !== 'completed');
-                let check_run_id = check[0].id;
-                let complete = false
-                while(!complete){
-                    console.log("Waiting for check to complete");
-                    let { data: checkRun } = await octokit.rest.checks.get({
+                if(!response.data.mergeable){
+                    console.log("Conflicts with staging, reverting back main");
+                    await revert(octokit, owner, repo, pull_number);  
+                }
+                else{
+                    console.log('Base branch changed to ' + branch);
+                    await sleep(30);
+                    let { data: checks } = await octokit.rest.checks.listForRef({
                         owner,
                         repo,
-                        check_run_id
+                        ref: response.data.head.ref
                     })
-                    if(checkRun.status !== 'completed'){
-                        await sleep(30);
-                    }
-                    else{
-                        complete = true;
-                        if(checkRun.conclusion !== 'success'){
-                            console.log("Check unsuccessful");
-                            revert(octokit, owner, repo, pull_number);
+                    let check = checks.check_runs.filter((check) => check.status !== 'completed');
+                    let check_run_id = check[0].id;
+                    let complete = false
+                    while(!complete){
+                        console.log("Waiting for check to complete");
+                        let { data: checkRun } = await octokit.rest.checks.get({
+                            owner,
+                            repo,
+                            check_run_id
+                        })
+                        if(checkRun.status !== 'completed'){
+                            await sleep(30);
                         }
                         else{
-                            await octokit.rest.pulls.merge({
-                                owner,
-                                repo,
-                                pull_number
-                            })
-                            .then(() => {
-                                console.log("PR successfully merged into " + branch);
-                            })
-                            .catch((error) => {
-                                console.log(error.message);
+                            complete = true;
+                            if(checkRun.conclusion !== 'success'){
+                                console.log("Check unsuccessful");
                                 revert(octokit, owner, repo, pull_number);
-                            })
+                            }
+                            else{
+                                await octokit.rest.pulls.merge({
+                                    owner,
+                                    repo,
+                                    pull_number
+                                })
+                                .then(() => {
+                                    console.log("PR successfully merged into " + branch);
+                                })
+                                .catch((error) => {
+                                    console.log(error.message);
+                                    revert(octokit, owner, repo, pull_number);
+                                })
+                            }
                         }
                     }
                 }
@@ -166,9 +170,17 @@ const main = async () => {
             title: "Push to public site"
         })
         .then((response) => {
-            if (response.status === 201 && response.data.mergeable){
-                console.log('PR created on Main');
-                return 0;
+            if (response.status === 201){
+                await octokit.rest.issues.addLabels({
+                    owner,
+                    repo,
+                    issue_number: response.data.number,
+                    labels: ['push to public']
+                })
+                .then(() => {
+                    console.log('PR created on Main');
+                    return 0;
+                })
             }
             else{
                 console.log('Create pull request failed');

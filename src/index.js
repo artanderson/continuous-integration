@@ -69,9 +69,9 @@ const main = async () => {
             per_page: 100
         })
 
-        let readyPulls = []
+        let readyPulls = [];
         for(let pull of pulls){
-            pullData = await octokit.rest.pulls.get({
+            let { data: pullData } = await octokit.rest.pulls.get({
                 repo,
                 owner,
                 pull_number: pull.number

@@ -77,11 +77,13 @@ const main = async () => {
             })
 
             let ready = true;
-            labels:
-            for(let label of pullData.labels){
-                if(exLabels.includes(label.name.toLowerCase())){
-                    ready = false;
-                    break labels;
+            if(pullData.labels){
+                labels:
+                for(let label of pullData.labels){
+                    if(exLabels.includes(label.name.toLowerCase())){
+                        ready = false;
+                        break labels;
+                    }
                 }
             }
 

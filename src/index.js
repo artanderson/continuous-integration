@@ -68,9 +68,8 @@ const main = async () => {
             base: "main",
             per_page: 100
         })
-        console.log(pulls);
 
-        pulls = pulls.map(async (pull) => {
+        pulls = await Promise.all(pulls.map(async (pull) => {
             pullData = await octokit.rest.pulls.get({
                 repo,
                 owner,
@@ -79,7 +78,7 @@ const main = async () => {
 
             let ready = true;
             labels:
-            for(let label of pull.labels){
+            for(let label of pullData.labels){
                 if(exLabels.includes(label.name.toLowerCase())){
                     ready = false;
                     break labels;
@@ -89,7 +88,7 @@ const main = async () => {
             if(pullData.mergeable_state === 'clean' && ready){
                 return pullData
             }
-        })
+        }))
         
         console.log(pulls);
 

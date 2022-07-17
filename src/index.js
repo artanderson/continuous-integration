@@ -1,6 +1,5 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { OK } = require('aerospike/lib/status');
 
 const sleep = (seconds) => {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000));

@@ -111,8 +111,18 @@ const main = async () => {
             })
             .then(async (response) => {
                 if(!response.data.mergeable){
-                    console.log("Conflicts with staging, reverting back main");
-                    await revert(octokit, owner, repo, pull_number);  
+                    sleep(30)
+                    .then(async () => {
+                        let { data: response } = octokit.rest.pulls.get({
+                            repo,
+                            owner,
+                            pull_number
+                        })
+                        if(!response.mergeable){
+                            console.log("Conflicts with staging, reverting back main");
+                            await revert(octokit, owner, repo, pull_number);  
+                        } 
+                    })
                 }
                 else{
                     console.log('Base branch changed to ' + branch);

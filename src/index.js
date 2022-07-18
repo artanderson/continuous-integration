@@ -103,6 +103,7 @@ const main = async () => {
         pulls:
         for(let pull of readyPulls){
             let pull_number = pull.number;
+            console.log('Starting staging workflow for pull request ' + pull_number);
             let { data: response } = await octokit.rest.pulls.update({
                 owner,
                 repo,
@@ -123,18 +124,18 @@ const main = async () => {
                 continue pulls;
             } 
 
-            console.log('Mergeability okay, waiting for check to start');
+            console.log('Mergeability okay, waiting for build check to start...');
             await sleep(30);
             let { data: checks } = await octokit.rest.checks.listForRef({
                 owner,
                 repo,
-                ref: response.data.head.ref
+                ref: response.head.ref
             })
             let check = checks.check_runs.filter((check) => check.status !== 'completed');
             let check_run_id = check[0].id;
             let complete = false
             while(!complete){
-                console.log("Waiting for check to complete");
+                console.log("Waiting for build check to complete...");
                 let { data: checkRun } = await octokit.rest.checks.get({
                     owner,
                     repo,
@@ -146,7 +147,7 @@ const main = async () => {
                 else{
                     complete = true;
                     if(checkRun.conclusion !== 'success'){
-                        console.log("Check unsuccessful");
+                        console.log("Build check failed");
                         revert(octokit, owner, repo, pull_number);
                     }
                     else{
@@ -156,7 +157,7 @@ const main = async () => {
                             pull_number
                         })
                         .then(() => {
-                            console.log("PR successfully merged into " + branch);
+                            console.log("Pull request successfully merged into " + branch);
                         })
                         .catch((error) => {
                             console.log(error.message);

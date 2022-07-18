@@ -103,76 +103,70 @@ const main = async () => {
         pulls:
         for(let pull of readyPulls){
             let pull_number = pull.number;
-            await octokit.rest.pulls.update({
+            let { data: response } = await octokit.rest.pulls.update({
                 owner,
                 repo,
                 pull_number,
                 base: branch
             })
-            .then(async (response) => {
-                if(!response.data.mergeable){
-                    sleep(30)
-                    .then(async () => {
-                        let { data: data } = await octokit.rest.pulls.get({
-                            repo,
-                            owner,
-                            pull_number
-                        })
-                        if(!data.mergeable){
-                            console.log("Conflicts with staging, reverting back main");
-                            await revert(octokit, owner, repo, pull_number);  
-                        } 
-                    })
+            console.log('Base branch changed to ' + branch + '\nChecking mergability...');
+            await sleep(30);
+            
+            let { data: data } = await octokit.rest.pulls.get({
+                repo,
+                owner,
+                pull_number
+            })
+            if(!data.mergeable){
+                console.log("Conflicts with staging, reverting back main");
+                await revert(octokit, owner, repo, pull_number);  
+                continue pulls;
+            } 
+
+            console.log('Mergeability okay, waiting for check to start');
+            await sleep(30);
+            let { data: checks } = await octokit.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: response.data.head.ref
+            })
+            let check = checks.check_runs.filter((check) => check.status !== 'completed');
+            let check_run_id = check[0].id;
+            let complete = false
+            while(!complete){
+                console.log("Waiting for check to complete");
+                let { data: checkRun } = await octokit.rest.checks.get({
+                    owner,
+                    repo,
+                    check_run_id
+                })
+                if(checkRun.status !== 'completed'){
+                    await sleep(30);
                 }
                 else{
-                    console.log('Base branch changed to ' + branch);
-                    await sleep(30);
-                    let { data: checks } = await octokit.rest.checks.listForRef({
-                        owner,
-                        repo,
-                        ref: response.data.head.ref
-                    })
-                    let check = checks.check_runs.filter((check) => check.status !== 'completed');
-                    let check_run_id = check[0].id;
-                    let complete = false
-                    while(!complete){
-                        console.log("Waiting for check to complete");
-                        let { data: checkRun } = await octokit.rest.checks.get({
+                    complete = true;
+                    if(checkRun.conclusion !== 'success'){
+                        console.log("Check unsuccessful");
+                        revert(octokit, owner, repo, pull_number);
+                    }
+                    else{
+                        await octokit.rest.pulls.merge({
                             owner,
                             repo,
-                            check_run_id
+                            pull_number
                         })
-                        if(checkRun.status !== 'completed'){
-                            await sleep(30);
-                        }
-                        else{
-                            complete = true;
-                            if(checkRun.conclusion !== 'success'){
-                                console.log("Check unsuccessful");
-                                revert(octokit, owner, repo, pull_number);
-                            }
-                            else{
-                                await octokit.rest.pulls.merge({
-                                    owner,
-                                    repo,
-                                    pull_number
-                                })
-                                .then(() => {
-                                    console.log("PR successfully merged into " + branch);
-                                })
-                                .catch((error) => {
-                                    console.log(error.message);
-                                    revert(octokit, owner, repo, pull_number);
-                                })
-                            }
-                        }
+                        .then(() => {
+                            console.log("PR successfully merged into " + branch);
+                        })
+                        .catch((error) => {
+                            console.log(error.message);
+                            revert(octokit, owner, repo, pull_number);
+                        })
                     }
                 }
-            })
-            .catch((error) => {
-                console.log(error.message);
-            });
+            }
         }
+
         if(pushToPublic){
             await octokit.rest.pulls.create({
                 owner,
@@ -195,12 +189,11 @@ const main = async () => {
                     })
                 }
                 else{
-                    console.log('Create pull request failed');
+                    console.log('Create pull request to main failed');
                 }
             });
         }
-        else{
-            
+        else{            
             console.log('Push to public pull request already exists')
         }                
     }

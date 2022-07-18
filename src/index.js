@@ -113,12 +113,12 @@ const main = async () => {
                 if(!response.data.mergeable){
                     sleep(30)
                     .then(async () => {
-                        let { data: response } = octokit.rest.pulls.get({
+                        let { data: data } = octokit.rest.pulls.get({
                             repo,
                             owner,
                             pull_number
                         })
-                        if(!response.mergeable){
+                        if(!data.mergeable){
                             console.log("Conflicts with staging, reverting back main");
                             await revert(octokit, owner, repo, pull_number);  
                         } 
@@ -200,6 +200,7 @@ const main = async () => {
             });
         }
         else{
+            
             console.log('Push to public pull request already exists')
         }                
     }

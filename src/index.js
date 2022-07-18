@@ -113,7 +113,7 @@ const main = async () => {
                 if(!response.data.mergeable){
                     sleep(30)
                     .then(async () => {
-                        let { data: data } = octokit.rest.pulls.get({
+                        let { data: data } = await octokit.rest.pulls.get({
                             repo,
                             owner,
                             pull_number

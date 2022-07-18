@@ -7,9 +7,6 @@ inputs:
   branch:
     description: 'Staging branch name'
     required: true      
-  interval:
-    description: 'Polling interval'
-    required: true
   labels:
     description: 'Labels to exclude Separated_With_Underscores'
     required: false

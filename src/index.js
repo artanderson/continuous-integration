@@ -39,11 +39,8 @@ const main = async () => {
     try{
         const token = core.getInput('gh_token', {required: true});
         const branch = core.getInput('branch', {required: true});
-        const seconds = core.getInput('interval', {required: true});
         const exLabels = ['push to public', ...core.getInput('labels', {required: false}).toLowerCase().split('_')];
         let pushToPublic = true;
-
-        console.log(exLabels);
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;

@@ -112,7 +112,7 @@ const main = async () => {
             })
             console.log('Base branch changed to ' + branch + '\nChecking mergability...');
             await sleep(30);
-            
+
             let { data: data } = await octokit.rest.pulls.get({
                 repo,
                 owner,
@@ -123,9 +123,7 @@ const main = async () => {
                 await revert(octokit, owner, repo, pull_number);  
                 continue pulls;
             } 
-
             console.log('Mergeability okay, waiting for build check to start...');
-            await sleep(30);
             let { data: checks } = await octokit.rest.checks.listForRef({
                 owner,
                 repo,
@@ -151,13 +149,14 @@ const main = async () => {
                         revert(octokit, owner, repo, pull_number);
                     }
                     else{
+                        console.log('Build check passed')
                         await octokit.rest.pulls.merge({
                             owner,
                             repo,
                             pull_number
                         })
                         .then(() => {
-                            console.log("Pull request successfully merged into " + branch);
+                            console.log("Pull request successfully merged into " + branch + '\n');
                         })
                         .catch((error) => {
                             console.log(error.message);
